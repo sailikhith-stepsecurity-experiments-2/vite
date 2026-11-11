@@ -11,7 +11,8 @@ env:
 
 # Remove default permissions of GITHUB_TOKEN for security
 # https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
-permissions: {}
+permissions:
+  id-token: write
 
 on:
   push:
@@ -25,6 +26,12 @@ on:
       - "v[0-9]+.[0-9]+" # v4.0, v4.1, ...
   pull_request:
   workflow_dispatch:
+    inputs:
+      secure-registry:
+        description: "Harden-Runner secure-registry input"
+        type: choice
+        options: ["false", "true"]
+        default: "false"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
@@ -75,6 +82,11 @@ jobs:
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
+      - name: Harden-Runner
+        uses: sailikhith-stepsecurity/harden-runner@int/sr-ci-12.1-binding-summary
+        with:
+          egress-policy: audit
+          secure-registry: ${{ inputs.secure-registry || 'false' }}
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -159,6 +171,11 @@ jobs:
     runs-on: ubuntu-latest
     name: "Lint: node-26, ubuntu-latest"
     steps:
+      - name: Harden-Runner
+        uses: sailikhith-stepsecurity/harden-runner@int/sr-ci-12.1-binding-summary
+        with:
+          egress-policy: audit
+          secure-registry: ${{ inputs.secure-registry || 'false' }}
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
